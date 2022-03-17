@@ -1,20 +1,22 @@
-{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-dodgy-exports #-}
-module Level02.Types
-  ( Topic
-  , CommentText
-  , ContentType (..)
-  , RqType (..)
-  , Error (..)
-  , mkTopic
-  , getTopic
-  , mkCommentText
-  , getCommentText
-  , renderContentType
-  ) where
 
-import           Data.ByteString (ByteString)
-import           Data.Text       (Text)
+module Level02.Types
+  ( Topic,
+    CommentText,
+    ContentType (..),
+    RqType (..),
+    Error (..),
+    mkTopic,
+    getTopic,
+    mkCommentText,
+    getCommentText,
+    renderContentType,
+  )
+where
+
+import Data.ByteString (ByteString)
+import Data.Text (Text)
 
 -- Working through the specification for our application, what are the
 -- types of requests we're going to handle?
@@ -44,11 +46,11 @@ import           Data.Text       (Text)
 
 -- Topic
 newtype Topic = Topic Text
-  deriving Show
+  deriving (Show)
 
 -- CommentText
 newtype CommentText = CommentText Text
-  deriving Show
+  deriving (Show)
 
 -- Using these convenient definitions, we can create the following constructors
 -- for our RqType:
@@ -57,14 +59,16 @@ newtype CommentText = CommentText Text
 -- ViewRq : Which needs the topic being requested.
 -- ListRq : Which doesn't need anything and lists all of the current topics.
 data RqType
+  = AddRq Topic CommentText
+  | ViewRq Topic
+  | ListRq
 
 -- Not everything goes according to plan, but it's important that our types
 -- reflect when errors can be introduced into our program. Additionally it's
 -- useful to be able to be descriptive about what went wrong.
 
 -- Fill in the error constructors as you need them.
-data Error
-
+newtype Error = Error Text
 
 -- Provide the constructors for a sum type to specify the `ContentType` Header,
 -- to be used when we build our Response type. Our application will be simple,
@@ -72,7 +76,7 @@ data Error
 --
 -- - plain text
 -- - json
-data ContentType
+data ContentType = PlainText | Json
 
 -- The ``ContentType`` constructors don't match what is required for the header
 -- information. Because ``wai`` uses a stringly type. So write a function that
@@ -85,11 +89,9 @@ data ContentType
 -- - plain text = "text/plain"
 -- - json       = "application/json"
 --
-renderContentType
-  :: ContentType
-  -> ByteString
-renderContentType =
-  error "renderContentType not implemented"
+renderContentType :: ContentType -> ByteString
+renderContentType PlainText = "text/plain"
+renderContentType Json = "application/json"
 
 -- We can choose to *not* export the constructor for a data type and instead
 -- provide a function of our own. In our case, we're not interested in empty
@@ -99,28 +101,22 @@ renderContentType =
 -- The export list at the top of this file demonstrates how to export a type,
 -- but not export the constructor.
 
-mkTopic
-  :: Text
-  -> Either Error Topic
-mkTopic =
-  error "mkTopic not implemented"
+mkTopic :: Text -> Either Error Topic
+mkTopic = require (== mempty) "topic must not be empty" Topic
 
-getTopic
-  :: Topic
-  -> Text
-getTopic =
-  error "getTopic not implemented"
+getTopic :: Topic -> Text
+getTopic (Topic x) = x
 
-mkCommentText
-  :: Text
-  -> Either Error CommentText
-mkCommentText =
-  error "mkCommentText not implemented"
+mkCommentText :: Text -> Either Error CommentText
+mkCommentText = require (== mempty) "comment must not be empty" CommentText
 
-getCommentText
-  :: CommentText
-  -> Text
-getCommentText =
-  error "getCommentText not implemented"
+getCommentText :: CommentText -> Text
+getCommentText (CommentText x) = x
+
+require :: (a -> Bool) -> Text -> (a -> b) -> a -> Either Error b
+require p m c x =
+  if p x
+    then Left (Error m)
+    else Right (c x)
 
 ---- Go to `src/Level02/Core.hs` next
